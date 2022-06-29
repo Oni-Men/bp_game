@@ -1,0 +1,13 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/yamapad/bp_game'
+hgcc -c main.c
+hgcc -c input.c
+hgcc -c button.c
+hgcc -c space.c
+hgcc -c map.c
+hgcc -c texture.c
+hgcc -c entity.c
+hgcc -c status.c
+hgcc -o run main.o input.o button.o space.o map.o texture.o status.o
+make: Leaving directory `/Users/yamapad/bp_game'
+ 
