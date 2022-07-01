@@ -18,15 +18,35 @@ typedef struct {
 
 typedef struct {
   int size;
-  Button *list;
+
+  /**  @brief ボタンリストの上限 */
+  int cap;
+  Button *button_arr;
 } ButtonList;
 
-void loadButton(const char *path);
+/**
+ * @brief 与えられたcapを上限とするボタンリストを作成する
+ *
+ * @param cap
+ * @return ButtonList*
+ */
+ButtonList *NewButtonList(int cap);
 
-void renderAllButton(int layer, Button buttons[], int n);
+/**
+ * @brief 与えられたボタンリストに、与えられたパラメータで作ったボタンを追加する
+ *
+ * @param list
+ * @param x
+ * @param y
+ * @param w
+ * @param h
+ * @param str
+ * @return int
+ */
+int AddButton(ButtonList *list, int x, int y, int w, int h, const char *str);
+
+void renderAllButton(int layer, ButtonList *list);
 
 void renderButton(int layer, Button *button);
 
-Button NewButton(int id, int x, int y, int w, int h, const char *str);
-
-int getHoveredButton(Button buttons[], int n, int mousex, int mousey);
+int getHoveredButton(ButtonList *list, int mousex, int mousey);

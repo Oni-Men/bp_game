@@ -6,26 +6,9 @@
 
 #include "space.h"
 
-ButtonList *loadButtons(const char *path) {
-  FILE *f;
-  ButtonList *buttons = malloc(sizeof(ButtonList));
-
-  if ((f = fopen(path, "r")) == NULL) {
-    return NULL;
-  }
-
-  fscanf(f, "%d", &buttons.size);
-  buttons.list = malloc(buttons.size * sizeof(Button));
-
-  char buf[1024];
-  for (int i = 0; i < buttons.size; i++) {
-    fscanf(f, "%s", &buf[0]);
-  }
-}
-
-void renderAllButton(int layer, Button *buttons, int n) {
-  for (int i = 0; i < n; i++) {
-    renderButton(layer, &buttons[i]);
+void renderAllButton(int layer, ButtonList *list) {
+  for (int i = 0; i < list->size; i++) {
+    renderButton(layer, &list->button_arr[i]);
   }
 }
 
@@ -46,19 +29,32 @@ void renderButton(int layer, Button *button) {
   HgWText(layer, x + (w - tw) / 2, y + (h - th) / 2, button->text);
 }
 
-Button NewButton(int id, int x, int y, int w, int h, const char *str) {
+ButtonList *NewButtonList(int cap) {
+  ButtonList *list = malloc(sizeof(ButtonList));
+  list->size = 0;
+  list->cap = cap;
+  return list;
+}
+
+int AddButton(ButtonList *list, int x, int y, int w, int h, const char *str) {
   Button btn;
-  btn.buttonId = id;
+  btn.buttonId = list->size;
   btn.space = NewSpace(x, y, w, h);
   btn.text = str;
   btn.background = HG_BLACK;
   btn.color = HG_WHITE;
   btn.fontType = 0x42;
   btn.fontSize = 16.0;
-  return btn;
+  list->button_arr[list->size] = btn;
+  list->size++;
+  return btn.buttonId;
 }
 
-int getHoveredButton(Button buttons[], int n, int mousex, int mousey) {
+void ClearButtons(ButtonList *list) { list->size = 0; }
+
+int getHoveredButton(ButtonList *list, int mousex, int mousey) {
+  int n = list->size;
+  Button *buttons = list->button_arr;
   for (int i = 0; i < n; i++) {
     if (IsPointHit(&(buttons[i].space), mousex, mousey)) {
       return i;
