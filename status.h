@@ -1,8 +1,7 @@
-#ifndef _DEF_STATUS_H_
-#define _DEF_STATUS_H_
+#ifndef STATUS_H
+#define STATUS_H
 
-typedef struct
-{
+typedef struct {
   char name[32];
   int money;
   char moneyText[32];

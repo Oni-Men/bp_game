@@ -1,3 +1,6 @@
+#ifndef GAME_H
+#define GAME_H
+
 #include <sys/time.h>
 #include <time.h>
 
@@ -58,3 +61,5 @@ void updateButtons(Game *game, double width, double height);
  * @return ButtonList*
  */
 ButtonList *getButtonList(Game *game);
+
+#endif

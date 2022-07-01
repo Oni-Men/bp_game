@@ -1,3 +1,5 @@
+#ifndef BUTTON_H
+#define BUTTON_H
 /**
  * @file button.h
  * @brief ボタンの構造体、制御、描画に関する処理
@@ -50,3 +52,5 @@ void renderAllButton(int layer, ButtonList *list);
 void renderButton(int layer, Button *button);
 
 int getHoveredButton(ButtonList *list, int mousex, int mousey);
+
+#endif

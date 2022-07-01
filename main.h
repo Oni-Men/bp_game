@@ -1,3 +1,8 @@
+#ifndef MAIN_H
+#define MAIN_H
+
+#include <stdbool.h>
+
 #include "button.h"
 #include "entity.h"
 #include "game.h"
@@ -129,3 +134,4 @@ int renderTextCenter(int layer, int c, int y, const char *str);
  * @return int
  */
 int renderTextRight(int layer, int c, int y, const char *str);
+#endif

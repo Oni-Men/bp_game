@@ -1,3 +1,6 @@
+#ifndef TEXTURE_H
+#define TEXTURE_H
+
 #define TEX_MAP_SIZE (64)
 
 typedef struct textureEntry {
@@ -63,3 +66,5 @@ TextureEntry *getTexture(TextureMap *texMap, const char *path);
 int getTextureId(TextureMap *texMap, const char *path);
 
 int calcHash(const char *str);
+
+#endif

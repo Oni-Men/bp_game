@@ -1,7 +1,7 @@
 #include <math.h>
 
-#ifndef SPACE_INCLUDED
-#define SPACE_INCLUDED
+#ifndef SPACE_H
+#define SPACE_H
 
 #define LEFT(t) (t->posx)
 #define RIGHT(t) (t->posx + t->width)

@@ -1,3 +1,6 @@
+#ifndef ENTITY_H
+#define ENTITY_H
+
 #include "map.h"
 #include "space.h"
 #include "status.h"
@@ -17,3 +20,5 @@ void saveEntity(Entity *entity, const char *path);
 int onGround(Entity *e);
 
 void updateEntity(Entity *e);
+
+#endif

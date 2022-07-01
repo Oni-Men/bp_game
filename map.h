@@ -1,5 +1,5 @@
-#ifndef _DEF_MAP_H_
-#define _DEF_MAP_H_
+#ifndef MAP_H
+#define MAP_H
 
 #include "space.h"
 

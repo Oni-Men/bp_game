@@ -1,7 +1,8 @@
+#ifndef INPUT_H
+#define INPUT_H
 #include <handy.h>
 
-typedef struct
-{
+typedef struct {
   int keyStates[256 * 256];
   int modKey;
   int mouse_down;
@@ -15,3 +16,5 @@ int isMouseDown();
 int getMouseX();
 int getMouseY();
 int getModKey();
+
+#endif
