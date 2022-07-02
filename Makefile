@@ -4,8 +4,8 @@ CFLAGS := -W -Wall
 SRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
-$(TARGET): main.o input.o button.o space.o map.o texture.o entity.o status.o
-	$(CC) -o $(TARGET) main.o input.o button.o space.o map.o texture.o status.o
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 %.o:%.c
 	$(CC) $(CFLAGS) -o $@ -c $<
