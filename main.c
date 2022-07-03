@@ -10,6 +10,8 @@
 #include <time.h>
 #include <unistd.h>
 
+extern Input input;
+
 // #define TEST
 #ifdef TEST
 int main(void) {
@@ -27,7 +29,6 @@ int main() {
   doubleLayer layers;
   int window, layer;
   int now, elapsed;
-  int escContinuous = 0;
 
   window = HgOpen(WINDOW_WIDTH, WINDOW_HEIGHT);
   layers = HgWAddDoubleLayer(window);
@@ -35,42 +36,50 @@ int main() {
   HgSetEventMask(HG_KEY_EVENT_MASK | HG_MOUSE_EVENT_MASK);
 
   Game game;
-  initGame(&game);
-  loadResources(&game);
+  initAll(&game);
 
+  // TODO
+  // プレイヤーの画像サイズからプレイヤーのサイズを設定しているが、これを変える
   double imgW, imgH;
   HgImageSize(getTextureId(game.texMap, "./images/kuya.png"), &imgW, &imgH);
   game.player.space.width = imgW / 4;
   game.player.space.height = imgH / 4;
 
+  hgevent *e;
   while (!game.exit) {
-    now = currentTimeMillis();
+    now = milliSecAtNow();
     elapsed = now - game.timeAtLastFrame;
-    processInput(HgEventNonBlocking());
+
+    e = HgEventNonBlocking();
+    processInput(e);
+    if (e != NULL && e->type == HG_KEY_DOWN) {
+      switch (e->ch) {
+        case PAUSE_TOGGLE_KEY:
+          game.pause = !game.pause;
+          break;
+        case DEBUG_TOGGLE_KEY:
+          game.showDebug = !game.showDebug;
+        default:
+          break;
+      }
+    }
 
     if (elapsed > (1000 / FPS)) {
       layer = HgLSwitch(&layers);
 
-      if (isKeyPressed(0x1B)) {
-        if (escContinuous == 0) {
-          game.pause = !game.pause;
-        }
-        escContinuous++;
-      } else {
-        escContinuous = 0;
-      }
-
       if (game.state == STATE_TITLE) {
-        title(layer, &game);
+        TickTitle(layer, &game);
       }
       if (game.state == STATE_PLAY) {
-        play(layer, &game);
+        TickPlay(layer, &game);
       }
       if (game.state == STATE_RESULT) {
-        result(layer, &game);
+        TickResult(layer, &game);
       }
 
-      renderDebugLog(layer, &game);
+      if (game.showDebug) {
+        RenderDebugLog(layer, &game);
+      }
       game.timeAtLastFrame = now;
       game.fps = 1000.0 / elapsed;
     }
@@ -85,33 +94,34 @@ int main() {
 
 #endif
 
-int currentTimeMillis() {
-  struct timeval now;
-  gettimeofday(&now, NULL);
-  return (now.tv_sec * 1000) + (now.tv_usec / 1000);
+void initAll(Game *game) {
+  initInput(&input);
+  initGame(game);
+  LoadAssets(game);
+  initButtons(game, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
 
-void loadResources(Game *game) {
+void LoadAssets(Game *game) {
   putTexture(game->texMap, loadTexture("./images/background/01.jpg"));
   putTexture(game->texMap, loadTexture("./images/kuya.png"));
   putTexture(game->texMap, loadTexture("./images/coin.png"));
 }
 
-int renderTextCenter(int layer, int x, int y, const char *str) {
+int RenderTextCenter(int layer, int x, int y, const char *str) {
   double tw, th;
   HgWTextSize(layer, &tw, &th, str);
   HgWText(layer, x - tw / 2, y - th / 2, str);
   return 0;
 }
 
-int renderTextRight(int layer, int x, int y, const char *str) {
+int RenderTextRight(int layer, int x, int y, const char *str) {
   double tw, th;
   HgWTextSize(layer, &tw, &th, str);
   HgWText(layer, x - tw, y, str);
   return 0;
 }
 
-void renderDebugLog(int layer, Game *game) {
+void RenderDebugLog(int layer, Game *game) {
   HgWSetColor(layer, HG_BLACK);
   HgWSetFont(layer, HG_C, 16);
 
@@ -136,35 +146,31 @@ void renderDebugLog(int layer, Game *game) {
     HgWText(layer, x, y, "tile: %d", tile->type);
   }
   y -= 20;
+  HgWText(layer, x, y, "camera: %.1f, %.1f", game->cameraPos.x,
+          game->cameraPos.y);
+  y -= 20;
 }
 
 /**
- * @brief Render title scene
+ * @brief Render TickTitle scene
  *
  * @param layer
  * @param game
  */
-void title(int layer, Game *game) {
-  // Clear the window
+void TickTitle(int layer, Game *game) {
+  // Clear this window
   HgWSetFillColor(layer, HG_WHITE);
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
-  // Draw title logo (as of now, it is empty)
-  HgWSetColor(layer, HG_BLACK);
-  HgWSetFont(layer, HG_M, 36);
-  renderTextCenter(layer, WINDOW_WIDTH / 2, WINDOW_HEIGHT * (2.0 / 3.0), "");
+  RenderTitleBackground(layer, game);
+  RenderTitleLogo(layer, game);
 
-  // Draw all buttons
-  renderAllButton(layer, getButtonList(game));
+  RenderAllButton(layer, getButtonList(game), &RenderTitleButton);
 
-  // Process button click
-  if (!isMouseDown()) {
-    return;
-  }
-  int hoveredId = getHoveredButton(game->buttonsList, getMouseX(), getMouseY());
-  switch (hoveredId) {
+  int id = handleButtons(game);
+  switch (id) {
     case 0:
-      game->state = STATE_PLAY;
+      SetGameState(game, STATE_PLAY);
       break;
     case 1:
       game->exit = true;
@@ -173,51 +179,110 @@ void title(int layer, Game *game) {
   }
 }
 
+void RenderTitleBackground(int layer, Game *game) {
+  int tex = getTextureId(game->texMap, "./images/background/01.jpg");
+  double img_w, img_h, aspect;
+  HgImageSize(tex, &img_w, &img_h);
+  double vy = fmin(10, (img_h - WINDOW_HEIGHT - game->cameraPos.y) / 10);
+  game->cameraPos.y += vy;
+  aspect = (double)WINDOW_HEIGHT / (double)WINDOW_WIDTH;
+  double sw = img_w;
+  double sh = img_w * aspect;
+  double sx = game->cameraPos.x;
+  double sy = game->cameraPos.y;
+
+  HgWImageDrawRect(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, tex, sx, sy, sw,
+                   sh);
+}
+
+void RenderTitleLogo(int layer, Game *game) {
+  int tex = getTextureId(game->texMap, "./images/background/01.jpg");
+  double img_w, img_h, aspect;
+  HgImageSize(tex, &img_w, &img_h);
+  int camera_y = game->cameraPos.y;
+  int border = img_h - WINDOW_HEIGHT * 2.5;
+  if (camera_y < border) {
+    return;
+  }
+
+  double posx = WINDOW_WIDTH / 2;
+  double posy = WINDOW_HEIGHT * (2.0 / 3.0);
+  double alpha = (double)(camera_y - border) / (WINDOW_HEIGHT * 1.5);
+  int logoColor = HgRGBA(1.0, 1.0, 1.0, alpha);
+  HgWSetColor(layer, logoColor);
+  HgWSetFont(layer, HG_M, 36);
+  RenderTextCenter(layer, posx, posy, "自由落下");
+}
+
+void RenderTitleButton(int layer, Button *button) {
+  if (button == NULL) {
+    return;
+  }
+
+  int x = button->space.posx;
+  int y = button->space.posy;
+  int w = button->space.width;
+  int h = button->space.height;
+
+  double alpha = 0.25;
+  int bg = HgRGBA(1.0, 1.0, 1.0, alpha);
+  HgWSetFillColor(layer, bg);
+  HgWBoxFill(layer, x, y, w, h, 0);
+
+  HgWSetFont(layer, HG_M, 24.0);
+  HgWSetColor(layer, HG_WHITE);
+
+  double tw, th;
+  HgWTextSize(layer, &tw, &th, button->text);
+  HgWText(layer, x + (w - tw) / 2, y + (h - th) / 2, button->text);
+}
+
 /**
  * @brief Render playing scene
  *
  * @param layer
  * @param game
  */
-void play(int layer, Game *game) {
+void TickPlay(int layer, Game *game) {
   HgWSetFillColor(layer, HG_WHITE);
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
-  Space2d playerLoc = game->player.space;
+  Space2d playerBox = game->player.space;
+  double pCenterX = playerBox.posx + playerBox.width / 2;
+  double pCenterY = playerBox.posy + playerBox.height / 2;
 
   // Camera Following
   if (!game->pause) {
-    game->cameraPos.x += (playerLoc.posx - game->cameraPos.x) / 5;
-    game->cameraPos.y += (playerLoc.posy - game->cameraPos.y) / 5;
+    game->cameraPos.x += (playerBox.posx - game->cameraPos.x) / 5;
+    game->cameraPos.y += (playerBox.posy - game->cameraPos.y) / 5;
   }
 
-  renderBackground(layer, game);
-  renderMap(layer, game->map, &game->cameraPos);
-
-  renderPlayer(layer, game);
-  renderStatus(layer, game);
+  RenderPlayBackground(layer, game);
+  // RenderMap(layer, game->map, &game->cameraPos);
+  RenderPlayer(layer, game);
+  RenderStatus(layer, game);
 
   if (game->pause) {
-    renderPauseScreen(layer, game);
+    RenderPause(layer, game);
   } else {
-    updateGame(game);
+    UpdateGame(game);
   }
 }
 
-void renderBackground(int layer, Game *game) {
+void RenderPlayBackground(int layer, Game *game) {
   int tex = getTextureId(game->texMap, "./images/background/01.jpg");
   double img_w, img_h, aspect;
   HgImageSize(tex, &img_w, &img_h);
-  aspect = WINDOW_HEIGHT / WINDOW_WIDTH;
-  double sx = game->cameraPos.x / WINDOW_WIDTH;
-  double sy = game->cameraPos.y / WINDOW_HEIGHT;
+  aspect = (double)WINDOW_HEIGHT / (double)WINDOW_WIDTH;
   double sw = img_w;
-  double sh = img_h * aspect;
+  double sh = img_w * aspect;
+  double sx = 0;
+  double sy = (game->cameraPos.y / 50000) * img_h;
   HgWImageDrawRect(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, tex, sx, sy, sw,
                    sh);
 }
 
-void renderPlayer(int layer, Game *game) {
+void RenderPlayer(int layer, Game *game) {
   int ptex = getTextureId(game->texMap, "./images/kuya.png");
   Entity *player = &game->player;
 
@@ -234,16 +299,16 @@ void renderPlayer(int layer, Game *game) {
   HgWBox(layer, x, y, space.width, space.height);
 }
 
-void renderPauseScreen(int layer, Game *game) {
+void RenderPause(int layer, Game *game) {
   HgWSetFillColor(layer, HgRGBA(0, 0, 0, 0.75));
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
   HgWSetColor(layer, HG_WHITE);
   HgWSetFont(layer, HG_GB, 36);
-  renderTextCenter(layer, WINDOW_WIDTH / 2, WINDOW_HEIGHT - 100, "Pause");
+  RenderTextCenter(layer, WINDOW_WIDTH / 2, WINDOW_HEIGHT - 100, "Pause");
 }
 
-void renderStatus(int layer, Game *game) {
+void RenderStatus(int layer, Game *game) {
   int coinTex = getTextureId(game->texMap, "./images/coin.png");
   int x = WINDOW_WIDTH - 40;
   int y = WINDOW_HEIGHT - 40;
@@ -258,39 +323,7 @@ void renderStatus(int layer, Game *game) {
   HgWText(layer, x - 80, y - 10, "x %s", status->moneyText);
 }
 
-Tile *getHitTile(Space2d *space, Map *map) {
-  int left = LEFT(space);
-  int right = RIGHT(space);
-  int top = TOP(space);
-  int bot = BOTTOM(space);
-
-  Tile *tileLetfTop = getTileAt(map, left, top);
-  Tile *tileLetBot = getTileAt(map, left, bot);
-  Tile *tileRightTop = getTileAt(map, right, top);
-  Tile *tileRightBot = getTileAt(map, right, bot);
-
-  if (checkTileHit(space, tileLetfTop)) {
-    return tileLetBot;
-  } else if (checkTileHit(space, tileRightTop)) {
-    return tileRightTop;
-  } else if (checkTileHit(space, tileRightBot)) {
-    return tileRightBot;
-  } else if (checkTileHit(space, tileLetBot)) {
-    return tileLetBot;
-  }
-  return NULL;
+void TickResult(int layer, Game *game) {
+  HgWSetFillColor(layer, HG_WHITE);
+  HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 }
-
-bool checkTileHit(Space2d *space, Tile *tile) {
-  if (tile == NULL) {
-    return false;
-  }
-
-  if (tile->type == TILE_AIR) {
-    return false;
-  }
-
-  return true;
-}
-
-void result(int layer, Game *game) {}

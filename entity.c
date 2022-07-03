@@ -1,13 +1,7 @@
 #include "entity.h"
 
-void initEntity(Entity *entity)
-{
-}
+void initEntity(Entity *entity) {}
 
-void saveEntity(Entity *entity, const char *path)
-{
-}
+void saveEntity(Entity *entity, const char *path) {}
 
-int onGround(Entity *e)
-{
-}
+int onGround(Entity *e) { return 0; }

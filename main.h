@@ -11,48 +11,68 @@
 #include "space.h"
 #include "status.h"
 #include "texture.h"
+#include "timeutil.h"
 
 #define WINDOW_WIDTH (1080)
 #define WINDOW_HEIGHT (720)
 #define FPS (60.0)
 
+#define PAUSE_TOGGLE_KEY (0x1B)
+#define DEBUG_TOGGLE_KEY (0x2F)
+
 /**
- * @brief 現在のミリ秒を取得する
+ * @brief 初期化処理をまとめて行う
  *
- * @return int
  */
-int currentTimeMillis();
+void initAll(Game *game);
 
 /**
  * @brief 画像や音声などをファイルから読み込む
  *
  * @param game
  */
-void loadResources(Game *game);
+void LoadAssets(Game *game);
 
 /**
- * @brief titleシーンのティック処理
+ * @brief TickTitleシーンのティック処理
  *
  * @param layer
  * @param game
  */
-void title(int layer, Game *game);
+void TickTitle(int layer, Game *game);
 
 /**
- * @brief playシーンのティック処理
+ * @brief タイトル画面の背景を描画する
  *
  * @param layer
  * @param game
  */
-void play(int layer, Game *game);
+void RenderTitleBackground(int layer, Game *game);
 
 /**
- * @brief resultシーンのティック処理
+ * @brief タイトルのロゴを描画する
  *
  * @param layer
  * @param game
  */
-void result(int layer, Game *game);
+void RenderTitleLogo(int layer, Game *game);
+
+/**
+ *
+ * @brief TickPlayシーンのティック処理
+ *
+ * @param layer
+ * @param game
+ */
+void TickPlay(int layer, Game *game);
+
+/**
+ * @brief TickResultシーンのティック処理
+ *
+ * @param layer
+ * @param game
+ */
+void TickResult(int layer, Game *game);
 
 /**
  * @brief デバッグ情報を描画
@@ -60,7 +80,7 @@ void result(int layer, Game *game);
  * @param layer
  * @param game
  */
-void renderDebugLog(int layer, Game *game);
+void RenderDebugLog(int layer, Game *game);
 
 /**
  * @brief プレイヤーのステータス情報を描画
@@ -68,7 +88,7 @@ void renderDebugLog(int layer, Game *game);
  * @param layer
  * @param game
  */
-void renderStatus(int layer, Game *game);
+void RenderStatus(int layer, Game *game);
 
 /**
  * @brief ポーズ画面を描画
@@ -76,7 +96,7 @@ void renderStatus(int layer, Game *game);
  * @param layer
  * @param game
  */
-void renderPauseScreen(int layer, Game *game);
+void RenderPause(int layer, Game *game);
 
 /**
  * @brief プレイヤーを描画
@@ -84,7 +104,7 @@ void renderPauseScreen(int layer, Game *game);
  * @param layer
  * @param game
  */
-void renderPlayer(int layer, Game *game);
+void RenderPlayer(int layer, Game *game);
 
 /**
  * @brief 背景を描画
@@ -92,26 +112,7 @@ void renderPlayer(int layer, Game *game);
  * @param layer
  * @param game
  */
-void renderBackground(int layer, Game *game);
-
-/**
- * @brief 与えられた空間とタイルが衝突しているかを判定
- *
- * @param space
- * @param tile
- * @return true
- * @return false
- */
-bool checkTileHit(Space2d *space, Tile *tile);
-
-/**
- * @brief マップ内で、スペースが衝突しているタイルを取得
- *
- * @param space
- * @param map
- * @return Tile*
- */
-Tile *getHitTile(Space2d *space, Map *map);
+void RenderPlayBackground(int layer, Game *game);
 
 /**
  * @brief 文字列を、中央寄せで描画
@@ -122,7 +123,7 @@ Tile *getHitTile(Space2d *space, Map *map);
  * @param str
  * @return int
  */
-int renderTextCenter(int layer, int c, int y, const char *str);
+int RenderTextCenter(int layer, int c, int y, const char *str);
 
 /**
  * @brief 文字列を、右寄せで描画
@@ -133,5 +134,11 @@ int renderTextCenter(int layer, int c, int y, const char *str);
  * @param str
  * @return int
  */
-int renderTextRight(int layer, int c, int y, const char *str);
+int RenderTextRight(int layer, int c, int y, const char *str);
+
+void RenderTitleButton(int layer, Button *button);
+
+void RenderPauseButton(int layer, Button *button);
+
+void RenderResultButton(int layer, Button *button);
 #endif

@@ -8,49 +8,44 @@
 
 #include "space.h"
 
+/**
+ * @brief ボタンを表現するデータ構造
+ *
+ */
 typedef struct {
+  int id;
+
+  // カーソルがボタン上に入ってから経過した時間
+  int timeHovered;
+
+  // ボタン上でマウスをクリックしてから経過した時間。
+  int timePressed;
+
   Space2d space;
-  int buttonId;
-  int background;
-  int color;
-  int fontType;
-  double fontSize;
   const char *text;
 } Button;
 
-typedef struct {
-  int size;
+#define L ButtonList
+typedef struct L *L;
+struct L {
+  Button *val;
+  L next;
+};
 
-  /**  @brief ボタンリストの上限 */
-  int cap;
-  Button *button_arr;
-} ButtonList;
+typedef void (*ButtonRender)(int id, Button *b);
 
 /**
- * @brief 与えられたcapを上限とするボタンリストを作成する
+ * @brief ボタンリストを作成する
  *
- * @param cap
  * @return ButtonList*
  */
-ButtonList *NewButtonList(int cap);
+L NewButtonList();
 
-/**
- * @brief 与えられたボタンリストに、与えられたパラメータで作ったボタンを追加する
- *
- * @param list
- * @param x
- * @param y
- * @param w
- * @param h
- * @param str
- * @return int
- */
-int AddButton(ButtonList *list, int x, int y, int w, int h, const char *str);
+L AddButton(L list, int id, Space2d box, const char *str);
 
-void renderAllButton(int layer, ButtonList *list);
+void RenderAllButton(int layer, L list, ButtonRender renderer);
 
-void renderButton(int layer, Button *button);
+Button *GetHoveredButton(L list, int mousex, int mousey);
 
-int getHoveredButton(ButtonList *list, int mousex, int mousey);
-
+#undef L
 #endif

@@ -1,6 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <handy.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
 
@@ -16,6 +20,17 @@
 #define STATE_PLAY 1
 #define STATE_RESULT 2
 
+typedef enum GameState {
+  TITLE,
+  PLAY,
+  RESULT,
+  EXIT,
+} GameState;
+
+typedef struct {
+  int loop;
+} TitleMeta;
+
 typedef struct {
   /** @brief Debugを表示するか */
   int showDebug;
@@ -27,14 +42,12 @@ typedef struct {
   double fps;
   time_t timeAtLastFrame;
 
-  ButtonList buttonsList[3];
+  Vec2d cameraPos;
   Map *map;
   TextureMap *texMap;
-
   Entity player;
 
-  Vec2d cameraPos;
-
+  ButtonList buttons[3];
 } Game;
 
 /**
@@ -49,9 +62,15 @@ void initGame(Game *game);
  *
  * @param game
  */
-void updateGame(Game *game);
+void UpdateGame(Game *game);
 
-void updateButtons(Game *game, double width, double height);
+void SetGameState(Game *game, int state);
+
+void initButtons(Game *game, double width, double height);
+
+void initTitle(Game *game);
+
+void initPlay(Game *game);
 
 /**
  * @brief 与えられたゲーム状態に対するボタンリストを取得する
@@ -60,6 +79,34 @@ void updateButtons(Game *game, double width, double height);
  * @param state
  * @return ButtonList*
  */
-ButtonList *getButtonList(Game *game);
+ButtonList getButtonList(Game *game);
+
+/**
+ * @brief
+ * 押されているボタンのIDを調べる。押されているボタンがないときは-1を返す。
+ *
+ * @param game
+ * @return int ボタンのID
+ */
+int handleButtons(Game *game);
+
+/**
+ * @brief 与えられた空間とタイルが衝突しているかを判定
+ *
+ * @param space
+ * @param tile
+ * @return true
+ * @return false
+ */
+bool checkTileHit(Space2d *space, Tile *tile);
+
+/**
+ * @brief マップ内で、スペースが衝突しているタイルを取得
+ *
+ * @param space
+ * @param map
+ * @return Tile*
+ */
+Tile *getHitTile(Space2d *space, Map *map);
 
 #endif

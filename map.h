@@ -26,7 +26,7 @@ typedef struct {
 
 Map *loadMap(const char *path);
 void unloadMap(Map *map);
-void renderMap(int layer, Map *map, Vec2d *cameraPos);
+void RenderMap(int layer, Map *map, Vec2d *cameraPos);
 int renderTile(int layer, int tex, Tile *tile, Vec2d *cameraPos, double width,
                double height);
 

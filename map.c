@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 Map *loadMap(const char *path) {
+  printf("Start loading map...\n");
   FILE *f;
   Map *map = malloc(sizeof(Map));
   Tile *tile;
@@ -53,7 +54,7 @@ Map *loadMap(const char *path) {
 
 void unloadMap(Map *map) { free(map); }
 
-void renderMap(int layer, Map *map, Vec2d *cameraPos) {
+void RenderMap(int layer, Map *map, Vec2d *cameraPos) {
   Tile *tile;
   int tex;
 
