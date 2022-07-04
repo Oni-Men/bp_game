@@ -5,8 +5,9 @@
 
 void initGame(Game *game) {
   printf("section start: initGame\n");
-  SetGameState(game, STATE_TITLE);
+  SetGameState(game, TITLE);
   game->showDebug = false;
+  game->useDoubleLayer = true;
   game->timeAtLastFrame = milliSecAtNow();
   game->exit = false;
   game->pause = false;
@@ -60,7 +61,7 @@ void UpdateGame(Game *game) {
   player->space.posy += player->velocity.y;
 
   if (player->space.posy < 0) {
-    SetGameState(game, STATE_RESULT);
+    SetGameState(game, RESULT);
   }
 }
 
@@ -74,11 +75,17 @@ void SetGameState(Game *game, int state) {
   HgGetSize(&width, &height);
 
   switch (game->state) {
-    case STATE_TITLE:
+    case TITLE:
       initTitle(game);
       break;
-    case STATE_PLAY:
+    case PLAY:
       initPlay(game);
+      break;
+    case RESULT:
+      initResult(game);
+      break;
+    case EXIT:
+      initExit(game);
       break;
     default:
       break;
@@ -97,6 +104,10 @@ void initPlay(Game *game) {
   game->cameraPos.y = 0;
 }
 
+void initResult(Game *game) {}
+
+void initExit(Game *game) { game->useDoubleLayer = false; }
+
 void initButtons(Game *game, double width, double height) {
   printf("section start: initButtons\n");
 
@@ -105,7 +116,7 @@ void initButtons(Game *game, double width, double height) {
   Space2d box2 = NewSpace(width / 2 - 150, height / 2 - 30, 300, 50);
   list = AddButton(list, 0, box1, "開始する");
   list = AddButton(list, 1, box2, "終了する");
-  game->buttons[STATE_TITLE] = list;
+  game->buttons[TITLE] = list;
 
   printf("section end: initButtons\n");
 }

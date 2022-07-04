@@ -34,7 +34,7 @@ void initAll(Game *game);
 void LoadAssets(Game *game);
 
 /**
- * @brief TickTitleシーンのティック処理
+ * @brief Titleシーンのティック処理
  *
  * @param layer
  * @param game
@@ -59,7 +59,7 @@ void RenderTitleLogo(int layer, Game *game);
 
 /**
  *
- * @brief TickPlayシーンのティック処理
+ * @brief Playシーンのティック処理
  *
  * @param layer
  * @param game
@@ -67,12 +67,20 @@ void RenderTitleLogo(int layer, Game *game);
 void TickPlay(int layer, Game *game);
 
 /**
- * @brief TickResultシーンのティック処理
+ * @brief Resultシーンのティック処理
  *
  * @param layer
  * @param game
  */
 void TickResult(int layer, Game *game);
+
+/**
+ * @brief Exitシーンのティック処理
+ *
+ * @param layer
+ * @param game
+ */
+void TickExit(int layer, Game *game);
 
 /**
  * @brief デバッグ情報を描画

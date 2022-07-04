@@ -65,16 +65,28 @@ int main() {
     }
 
     if (elapsed > (1000 / FPS)) {
-      layer = HgLSwitch(&layers);
+      if (game.useDoubleLayer) {
+        layer = HgLSwitch(&layers);
+      } else {
+        layer = layers.display;
+      }
 
-      if (game.state == STATE_TITLE) {
-        TickTitle(layer, &game);
-      }
-      if (game.state == STATE_PLAY) {
-        TickPlay(layer, &game);
-      }
-      if (game.state == STATE_RESULT) {
-        TickResult(layer, &game);
+      switch (game.state) {
+        case TITLE:
+          TickTitle(layer, &game);
+          break;
+        case PLAY:
+          TickPlay(layer, &game);
+          break;
+        case RESULT:
+          TickResult(layer, &game);
+          break;
+        case EXIT:
+          TickExit(layer, &game);
+          break;
+        default:
+          game.exit = true;
+          break;
       }
 
       if (game.showDebug) {
@@ -170,10 +182,10 @@ void TickTitle(int layer, Game *game) {
   int id = handleButtons(game);
   switch (id) {
     case 0:
-      SetGameState(game, STATE_PLAY);
+      SetGameState(game, PLAY);
       break;
     case 1:
-      game->exit = true;
+      SetGameState(game, EXIT);
     default:
       break;
   }
@@ -326,4 +338,16 @@ void RenderStatus(int layer, Game *game) {
 void TickResult(int layer, Game *game) {
   HgWSetFillColor(layer, HG_WHITE);
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+}
+
+void TickExit(int layer, Game *game) {
+  ExitSceneMeta *meta = &game->exitSceneMeta;
+  double a = meta->frames > 100 ? 1.0 : 0.05;
+  int c = HgGrayA(0.0, a);
+  HgWSetFillColor(layer, c);
+  HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+  if (meta->frames++ > 120) {
+    game->exit = true;
+  }
 }

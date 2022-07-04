@@ -16,10 +16,6 @@
 #include "status.h"
 #include "texture.h"
 
-#define STATE_TITLE 0
-#define STATE_PLAY 1
-#define STATE_RESULT 2
-
 typedef enum GameState {
   TITLE,
   PLAY,
@@ -32,8 +28,14 @@ typedef struct {
 } TitleMeta;
 
 typedef struct {
+  int frames;
+} ExitSceneMeta;
+
+typedef struct {
   /** @brief Debugを表示するか */
   int showDebug;
+
+  int useDoubleLayer;
 
   /** @brief ゲームの状態 */
   int state;
@@ -48,6 +50,8 @@ typedef struct {
   Entity player;
 
   ButtonList buttons[3];
+
+  ExitSceneMeta exitSceneMeta;
 } Game;
 
 /**
@@ -68,9 +72,33 @@ void SetGameState(Game *game, int state);
 
 void initButtons(Game *game, double width, double height);
 
+/**
+ * @brief タイトル画面に切り替わった時に実行される
+ *
+ * @param game
+ */
 void initTitle(Game *game);
 
+/**
+ * @brief プレイ画面に切り替わった時に実行される
+ *
+ * @param game
+ */
 void initPlay(Game *game);
+
+/**
+ * @brief リザルト画面に切り替わった時に実行される
+ *
+ * @param game
+ */
+void initResult(Game *game);
+
+/**
+ * @brief 終了画面に切り替わった時に実行される
+ *
+ * @param game
+ */
+void initExit(Game *game);
 
 /**
  * @brief 与えられたゲーム状態に対するボタンリストを取得する
