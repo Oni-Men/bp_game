@@ -40,9 +40,11 @@ L AddButton(L list, int id, Space2d box, const char *str) {
 }
 
 Button *GetHoveredButton(L list, int mousex, int mousey) {
+  Button *b;
   do {
-    if (IsPointHit(&list->val->space, mousex, mousey)) {
-      return list->val;
+    b = list->val;
+    if (b != NULL && IsPointHit(&b->space, mousex, mousey)) {
+      return b;
     }
     list = list->next;
   } while (list);
