@@ -231,15 +231,21 @@ void RenderTitleButton(int layer, Button *button) {
     return;
   }
 
-  int x = button->space.posx;
-  int y = button->space.posy;
-  int w = button->space.width;
-  int h = button->space.height;
+  double x = button->space.posx;
+  double y = button->space.posy;
+  double w = button->space.width;
+  double h = button->space.height;
+
+  double xp[] = {x - 10, x + w, x + w + 10, x};
+  double yp[] = {y, y, y + h, y + h};
 
   double alpha = 0.25;
   int bg = HgRGBA(1.0, 1.0, 1.0, alpha);
+
+  HgWSetWidth(layer, 2.5);
+  HgWSetColor(layer, HG_WHITE);
   HgWSetFillColor(layer, bg);
-  HgWBoxFill(layer, x, y, w, h, 0);
+  HgWPolygonFill(layer, 4, &xp, &yp, 1);
 
   HgWSetFont(layer, HG_M, 24.0);
   HgWSetColor(layer, HG_WHITE);
