@@ -43,8 +43,13 @@ Button *GetHoveredButton(L list, int mousex, int mousey) {
   Button *b;
   do {
     b = list->val;
-    if (b != NULL && IsPointHit(&b->space, mousex, mousey)) {
-      return b;
+    if (b != NULL) {
+      if (IsPointHit(&b->space, mousex, mousey)) {
+        b->timeHovered++;
+        return b;
+      } else {
+        b->timeHovered = 0;
+      }
     }
     list = list->next;
   } while (list);
