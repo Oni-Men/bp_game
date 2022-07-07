@@ -7,7 +7,7 @@ OBJS := $(patsubst %.c,%.o,$(SRCS))
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-%.o:%.c
+%.o:%.c %.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 test: $(TARGET)
