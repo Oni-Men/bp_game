@@ -26,13 +26,15 @@ int main(void) {
 #else
 
 int main() {
-  doubleLayer layers;
-  int window, layer;
+  doubleLayer layers, bulletLayers;
+  int window, layer, bulletLayer;
   int now, elapsed;
 
   window = HgOpen(WINDOW_WIDTH, WINDOW_HEIGHT);
   layers = HgWAddDoubleLayer(window);
+  bulletLayers = HgWAddDoubleLayer(window);
 
+  HgWSetTitle(window, WINDOW_TITLE);
   HgSetEventMask(HG_KEY_EVENT_MASK | HG_MOUSE_EVENT_MASK);
 
   Game game;
@@ -67,8 +69,10 @@ int main() {
     if (elapsed > (1000 / FPS)) {
       if (game.useDoubleLayer) {
         layer = HgLSwitch(&layers);
+        bulletLayer = HgLSwitch(&bulletLayers);
       } else {
         layer = layers.display;
+        bulletLayer = bulletLayers.display;
       }
 
       switch (game.state) {
@@ -116,7 +120,8 @@ void initAll(Game *game) {
 void LoadAssets(Game *game) {
   putTexture(game->texMap, loadTexture("./images/background/01.jpg"));
   putTexture(game->texMap, loadTexture("./images/kuya.png"));
-  putTexture(game->texMap, loadTexture("./images/coin.png"));
+  putTexture(game->texMap, loadTexture("./images/arrow.png"));
+  putTexture(game->texMap, loadTexture("./images/shield.png"));
 }
 
 int RenderTextCenter(int layer, int x, int y, const char *str) {
@@ -160,6 +165,8 @@ void RenderDebugLog(int layer, Game *game) {
   y -= 20;
   HgWText(layer, x, y, "camera: %.1f, %.1f", game->cameraPos.x,
           game->cameraPos.y);
+  y -= 20;
+  HgWText(layer, x, y, "bullets: %d", game->bulletsCount);
   y -= 20;
 }
 
@@ -222,8 +229,8 @@ void RenderTitleLogo(int layer, Game *game) {
   double alpha = (double)(camera_y - border) / (WINDOW_HEIGHT * 1.5);
   int logoColor = HgRGBA(1.0, 1.0, 1.0, alpha);
   HgWSetColor(layer, logoColor);
-  HgWSetFont(layer, HG_M, 36);
-  RenderTextCenter(layer, posx, posy, "自由落下");
+  HgWSetFontByName(layer, KaiseiFont, 36.0);
+  RenderTextCenter(layer, posx, posy, WINDOW_TITLE);
 }
 
 void RenderTitleButton(int layer, Button *button) {
@@ -247,12 +254,12 @@ void RenderTitleButton(int layer, Button *button) {
   HgWSetFillColor(layer, bg);
   HgWPolygonFill(layer, 4, &xp, &yp, 1);
 
-  HgWSetFont(layer, HG_M, 24.0);
+  HgWSetFontByName(layer, KaiseiFont, 24.0);
   HgWSetColor(layer, HG_WHITE);
 
   double tw, th;
   HgWTextSize(layer, &tw, &th, button->text);
-  HgWText(layer, x + (w - tw) / 2, y + (h - th) / 2, button->text);
+  HgWText(layer, x + (w - tw) / 2, y + (h - th) / 2 + 4, button->text);
 }
 
 /**
@@ -262,7 +269,7 @@ void RenderTitleButton(int layer, Button *button) {
  * @param game
  */
 void TickPlay(int layer, Game *game) {
-  HgWSetFillColor(layer, HG_WHITE);
+  HgWSetFillColor(layer, 0);
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
   Space2d playerBox = game->player.space;
@@ -278,9 +285,12 @@ void TickPlay(int layer, Game *game) {
   RenderPlayBackground(layer, game);
   // RenderMap(layer, game->map, &game->cameraPos);
   RenderPlayer(layer, game);
+  RenderBullets(layer, game);
+
   RenderStatus(layer, game);
 
   if (game->pause) {
+    HandlePause(game);
     RenderPause(layer, game);
   } else {
     UpdateGame(game);
@@ -295,9 +305,22 @@ void RenderPlayBackground(int layer, Game *game) {
   double sw = img_w;
   double sh = img_w * aspect;
   double sx = 0;
-  double sy = (game->cameraPos.y / 50000) * img_h;
+  double sy = ((game->cameraPos.y) / (25000)) * (img_h - WINDOW_HEIGHT);
   HgWImageDrawRect(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, tex, sx, sy, sw,
                    sh);
+}
+
+void HandlePause(Game *game) {
+  int id = handleButtons(game);
+  switch (id) {
+    case 0:
+      game->pause = false;
+      break;
+    case 1:
+      SetGameState(game, RESULT);
+    default:
+      break;
+  }
 }
 
 void RenderPlayer(int layer, Game *game) {
@@ -321,29 +344,63 @@ void RenderPause(int layer, Game *game) {
   HgWSetFillColor(layer, HgRGBA(0, 0, 0, 0.75));
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
+  HgWSetFontByName(layer, KaiseiFont, 36.0);
   HgWSetColor(layer, HG_WHITE);
-  HgWSetFont(layer, HG_GB, 36);
-  RenderTextCenter(layer, WINDOW_WIDTH / 2, WINDOW_HEIGHT - 100, "Pause");
+  RenderTextCenter(layer, WINDOW_WIDTH / 2, WINDOW_HEIGHT - 60, "ポーズ中...");
+
+  RenderAllButton(layer, getButtonList(game), &RenderTitleButton);
 }
 
 void RenderStatus(int layer, Game *game) {
-  int coinTex = getTextureId(game->texMap, "./images/coin.png");
-  int x = WINDOW_WIDTH - 40;
+  int x = WINDOW_WIDTH - 100;
   int y = WINDOW_HEIGHT - 40;
 
-  HgWImagePut(layer, x - 100, y, coinTex, 0.1, 0);
-
+  char buf[30];
   Status *status = &game->player.status;
-  formatMoney(status);
+  FormatScore(status, buf);
 
-  HgWSetFont(layer, HG_GB, 24);
-  HgWSetColor(layer, HG_YELLOW);
-  HgWText(layer, x - 80, y - 10, "x %s", status->moneyText);
+  HgWSetFontByName(layer, FuturaFont, 24);
+
+  // Render player's score
+  int tex = getTextureId(game->texMap, "./images/shield.png");
+  HgWImageDrawRect(layer, x, y, 24, 24, tex, 0, 0, 128, 128);
+  HgWSetColor(layer, HG_WHITE);
+  HgWText(layer, x + 24, y - 4, "%s", buf);
+
+  y -= 32;
+
+  // Render player's remaining ammo
+  tex = getTextureId(game->texMap, "./images/arrow.png");
+  HgWImageDrawRect(layer, x, y, 24, 24, tex, 0, 0, 128, 128);
+  HgWText(layer, x + 24, y - 4, "%d", status->ammoRemaining);
+}
+
+void RenderBullets(int layer, Game *game) {
+  Entity *e;
+  Space2d space;
+  double x, y;
+  int tex = getTextureId(game->texMap, "./images/arrow.png");
+
+  for (int i = 0; i < MAX_BULLETS; i++) {
+    e = game->bullets[i];
+    if (e == NULL) {
+      continue;
+    }
+
+    space = e->space;
+    x = space.posx - game->cameraPos.x + WINDOW_WIDTH / 2;
+    y = space.posy - game->cameraPos.y + WINDOW_HEIGHT / 2;
+    HgWImagePut(layer, x, y, tex, 0.2, e->rotation);
+  }
 }
 
 void TickResult(int layer, Game *game) {
   HgWSetFillColor(layer, HG_WHITE);
   HgWBoxFill(layer, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+  HgWSetFontByName(layer, KaiseiFont, 36.0);
+  HgWSetColor(layer, HG_BLACK);
+  HgWText(layer, WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, "結果");
 }
 
 void TickExit(int layer, Game *game) {

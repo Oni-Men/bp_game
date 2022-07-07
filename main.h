@@ -13,9 +13,13 @@
 #include "texture.h"
 #include "timeutil.h"
 
+#define WINDOW_TITLE "落ちる単語シューター"
 #define WINDOW_WIDTH (1080)
 #define WINDOW_HEIGHT (720)
 #define FPS (60.0)
+
+#define KaiseiFont ("Kaisei Opti Regular")
+#define FuturaFont ("Futura Medium")
 
 #define PAUSE_TOGGLE_KEY (0x1B)
 #define DEBUG_TOGGLE_KEY (0x2F)
@@ -99,6 +103,13 @@ void RenderDebugLog(int layer, Game *game);
 void RenderStatus(int layer, Game *game);
 
 /**
+ * @brief ポーズ画面で、入力の処理などを扱う
+ *
+ * @param game
+ */
+void HandlePause(Game *game);
+
+/**
  * @brief ポーズ画面を描画
  *
  * @param layer
@@ -121,6 +132,8 @@ void RenderPlayer(int layer, Game *game);
  * @param game
  */
 void RenderPlayBackground(int layer, Game *game);
+
+void RenderBullets(int layer, Game *game);
 
 /**
  * @brief 文字列を、中央寄せで描画

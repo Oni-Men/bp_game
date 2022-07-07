@@ -16,6 +16,9 @@
 #include "status.h"
 #include "texture.h"
 
+#define MAX_BULLETS (100)
+#define BULLET_SIZE (16)
+
 typedef enum GameState {
   TITLE,
   PLAY,
@@ -49,6 +52,9 @@ typedef struct {
   TextureMap *texMap;
   Entity player;
 
+  int bulletsCount;
+  Entity *bullets[MAX_BULLETS];
+
   ButtonList buttons[3];
 
   ExitSceneMeta exitSceneMeta;
@@ -67,6 +73,13 @@ void initGame(Game *game);
  * @param game
  */
 void UpdateGame(Game *game);
+
+/**
+ * @brief プレイヤーのアクションを実行する
+ *
+ * @param game
+ */
+void PlayAct(Game *game);
 
 void SetGameState(Game *game, int state);
 
@@ -136,5 +149,28 @@ bool checkTileHit(Space2d *space, Tile *tile);
  * @return Tile*
  */
 Tile *getHitTile(Space2d *space, Map *map);
+
+/**
+ * @brief 弾丸オブジェクトを追加する
+ *
+ * @param game
+ * @param bullet
+ */
+void AddBullet(Game *game, Entity *bullet);
+
+/**
+ * @brief 弾丸オブジェクトを削除し、メモリを解放する
+ *
+ * @param game
+ * @param b
+ */
+void RemoveBullet(Game *game, Entity *b);
+
+/**
+ * @brief すべての弾丸オブジェクトについて、処理を行う
+ *
+ * @param game
+ */
+void UpdateBullets(Game *game);
 
 #endif

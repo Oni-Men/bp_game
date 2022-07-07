@@ -3,6 +3,8 @@
 #include "input.h"
 #include "timeutil.h"
 
+#define MAX_FALLING_SPEED (-10)
+
 void initGame(Game *game) {
   printf("section start: initGame\n");
   SetGameState(game, TITLE);
@@ -14,23 +16,12 @@ void initGame(Game *game) {
 
   game->map = loadMap("./assets/map.txt");
 
-  // @button
-  // game->buttonsList = NewButtonList(3);
-
   TextureMap *texMap = malloc(sizeof(TextureMap));
   initTextureMap(texMap);
   game->texMap = texMap;
 
   game->cameraPos.x = 0;
   game->cameraPos.y = 0;
-
-  Entity *player = &game->player;
-  player->space.posx = game->map->width / 2 * TILE_SIZE;
-  player->space.posy = game->map->height * TILE_SIZE;
-  player->hitTile = 0;
-  player->onGround = false;
-
-  initializeStatus(&player->status);
 
   printf("section end: initGame\n");
 }
@@ -43,25 +34,118 @@ void UpdateGame(Game *game) {
   if (isKeyDown('d')) {
     player->space.posx += 2;
   }
-  if (isKeyDown('w')) {
+  if (isKeyDown('w') && CanJump(&player->status)) {
     player->velocity.y = 5;
+    SetJumpCooltime(&player->status, 300);
   }
   if (isKeyDown('s')) {
-    player->velocity.y = -10;
+    player->velocity.y = MAX_FALLING_SPEED;
+  }
+  if (isKeyDown(0x20)) {
+    PlayAct(game);
   }
 
   Space2d tickedSpace = player->space;
   Move(&tickedSpace, player->velocity.x, player->velocity.y);
 
   player->velocity.y -= 0.1;
-  if (player->velocity.y < -5) {
-    player->velocity.y = -5;
+  if (player->velocity.y < MAX_FALLING_SPEED) {
+    player->velocity.y = MAX_FALLING_SPEED;
   }
   player->space.posx += player->velocity.x;
   player->space.posy += player->velocity.y;
 
   if (player->space.posy < 0) {
     SetGameState(game, RESULT);
+  }
+
+  if (player->status.jumpCooltime > 0) {
+    player->status.jumpCooltime--;
+  }
+
+  if (player->status.gunCooldown > 0) {
+    player->status.gunCooldown--;
+  }
+
+  UpdateBullets(game);
+}
+
+void PlayAct(Game *game) {
+  Entity *p = &game->player;
+  Status *s = &game->player.status;
+  if (s->ammoRemaining < 0 || s->gunCooldown > 0) {
+    return;
+  }
+  s->ammoRemaining--;
+  s->gunCooldown = 10;
+
+  double window_w, window_h;
+  HgGetSize(&window_w, &window_h);
+
+  double x = p->space.posx + p->space.width / 2;
+  double y = p->space.posy + p->space.height / 2;
+  double tx = getMouseX() + game->cameraPos.x - window_w / 2;
+  double ty = getMouseY() + game->cameraPos.y - window_h / 2;
+
+  Entity *e = (Entity *)malloc(sizeof(Entity));
+  e->space.width = BULLET_SIZE;
+  e->space.height = BULLET_SIZE;
+
+  e->space.posx = x + BULLET_SIZE / 2;
+  e->space.posy = y + BULLET_SIZE / 2;
+
+  e->rotation = atan2f(ty - y, tx - x);
+  e->velocity = p->velocity;
+  e->velocity.x += 15 * cos(e->rotation);
+  e->velocity.y += 5 * sin(e->rotation);
+
+  AddBullet(game, e);
+}
+
+void AddBullet(Game *game, Entity *bullet) {
+  for (int i = 0; i < MAX_BULLETS; i++) {
+    if (game->bullets[i] != NULL) {
+      continue;
+    }
+    bullet->id = i;
+    game->bullets[i] = bullet;
+    break;
+  }
+}
+
+void RemoveBullet(Game *game, Entity *b) {
+  int id = b->id;
+  if (id < 0 || id >= MAX_BULLETS) {
+    return;
+  }
+  game->bullets[id] = NULL;
+  free(b);
+}
+
+void UpdateBullets(Game *game) {
+  double width, height;
+  HgGetSize(&width, &height);
+  Entity *p = &game->player;
+  Entity *e;
+
+  game->bulletsCount = 0;
+  for (int i = 0; i < MAX_BULLETS; i++) {
+    e = game->bullets[i];
+    if (e == NULL) {
+      continue;
+    }
+    game->bulletsCount++;
+
+    e->velocity.y -= 0.1;
+    e->space.posx += e->velocity.x;
+    e->space.posy += e->velocity.y;
+
+    double a = p->space.posx - e->space.posx;
+    double b = p->space.posy - e->space.posy;
+    double distSq = (a * a) + (b * b);
+    if (distSq > width * width && distSq > height * height) {
+      RemoveBullet(game, e);
+    }
   }
 }
 
@@ -94,29 +178,57 @@ void SetGameState(Game *game, int state) {
   // initButtons(game, width, height);
 }
 
-void initTitle(Game *game) { game->cameraPos.y = 0; }
-
-void initPlay(Game *game) {
-  game->player.space.posx = 0;
-  game->player.space.posy = 50000;
-
-  game->cameraPos.x = 0;
+void initTitle(Game *game) {
+  printf("section start: initTitle\n");
   game->cameraPos.y = 0;
+  printf("section end: initTitle\n");
 }
 
-void initResult(Game *game) {}
+void initPlay(Game *game) {
+  printf("section start: initPlay\n");
+  game->cameraPos.x = 0;
+  game->cameraPos.y = 0;
 
-void initExit(Game *game) { game->useDoubleLayer = false; }
+  Entity *player = &game->player;
+  player->space.posx = 0;
+  player->space.posy = 25000;
+  player->hitTile = 0;
+  player->onGround = false;
+
+  for (int i = 0; i < MAX_BULLETS; i++) {
+    game->bullets[i] = NULL;
+  }
+
+  initializeStatus(&player->status);
+
+  printf("section end: initPlay\n");
+}
+
+void initResult(Game *game) {
+  printf("section start: initResult\n");
+  printf("section end : initResult\n");
+}
+
+void initExit(Game *game) {
+  printf("section start: initExit\n");
+  game->useDoubleLayer = false;
+  printf("section end: initExit\n");
+}
 
 void initButtons(Game *game, double width, double height) {
   printf("section start: initButtons\n");
 
-  ButtonList list = NewButtonList();
+  ButtonList list1 = NewButtonList();
   Space2d box1 = NewSpace(width / 2 - 150, height / 2 + 30, 300, 50);
   Space2d box2 = NewSpace(width / 2 - 150, height / 2 - 30, 300, 50);
-  list = AddButton(list, 0, box1, "開始する");
-  list = AddButton(list, 1, box2, "終了する");
-  game->buttons[TITLE] = list;
+  list1 = AddButton(list1, 0, box1, "はじめる");
+  list1 = AddButton(list1, 1, box2, "おわる");
+  game->buttons[TITLE] = list1;
+
+  ButtonList list2 = NewButtonList();
+  list2 = AddButton(list2, 0, box1, "ゲームにもどる");
+  list2 = AddButton(list2, 1, box2, "メニューにもどる");
+  game->buttons[PLAY] = list2;
 
   printf("section end: initButtons\n");
 }
@@ -144,25 +256,6 @@ int handleButtons(Game *game) {
   if (button == NULL) {
     return -1;
   }
-
-  // button->timeHovered++;
-
-  // ButtonList list = buttons;
-  // do {
-  //   if (list->val != button && list->val != NULL) {
-  //     list->val->timeHovered = 0;
-  //   }
-  //   list = list->next;
-  // } while (list);
-
-  // do {
-  //   if (list->val != button && list->val != NULL) {
-  //     list->val->timePressed = 0;
-  //   }
-  //   list = list->next;
-  // } while (list);
-
-  // button->timePressed++;
 
   return button->id;
 }

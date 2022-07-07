@@ -1,21 +1,29 @@
 #include "status.h"
+
 #include <stdio.h>
 
-void initializeStatus(Status *s)
-{
-  s->money = 0;
+void initializeStatus(Status *s) {
+  s->score = 0;
+  s->jumpCooltime = 0;
+  s->ammoRemaining = 999;
+  s->gunCooldown = 0;
 }
 
-void formatMoney(Status *status)
-{
-  int money = status->money;
+void FormatScore(Status *status, char *s) {
+  int score = status->score;
 
-  if (money >= 100000)
-  {
-    sprintf(status->moneyText, "%f", (double)money / 1000);
+  if (score >= 100000) {
+    sprintf(s, "%f", (double)score / 100000);
+  } else {
+    sprintf(s, "%d", score);
   }
-  else
-  {
-    sprintf(status->moneyText, "%d", money);
+}
+
+int CanJump(Status *s) { return s->jumpCooltime == 0; }
+
+void SetJumpCooltime(Status *s, int i) {
+  if (i < 0) {
+    i = 0;
   }
+  s->jumpCooltime = i;
 }

@@ -6,11 +6,13 @@
 #include "status.h"
 
 typedef struct {
+  int id;
   Space2d space;
   Vec2d velocity;
   Status status;
   Tile *hitTile;
   int onGround;
+  double rotation;
 } Entity;
 
 void initEntity(Entity *entity);
