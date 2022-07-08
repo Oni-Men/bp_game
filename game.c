@@ -1,7 +1,10 @@
 #include "game.h"
 
+#include <string.h>
+
 #include "input.h"
 #include "timeutil.h"
+#include "words.h"
 
 #define MAX_FALLING_SPEED (-10)
 
@@ -35,7 +38,7 @@ void UpdateGame(Game *game) {
     player->space.posx += 2;
   }
   if (isKeyDown('w') && CanJump(&player->status)) {
-    player->velocity.y = 5;
+    player->velocity.y = 3.5;
     SetJumpCooltime(&player->status, 300);
   }
   if (isKeyDown('s')) {
@@ -82,27 +85,47 @@ void PlayAct(Game *game) {
   double window_w, window_h;
   HgGetSize(&window_w, &window_h);
 
+  char *word = GetRandomWord();
+  int word_len = (int)strlen(word);
+
   double x = p->space.posx + p->space.width / 2;
   double y = p->space.posy + p->space.height / 2;
   double tx = getMouseX() + game->cameraPos.x - window_w / 2;
   double ty = getMouseY() + game->cameraPos.y - window_h / 2;
+  double rot = atan2f(ty - y, tx - x);
+  double angle;
 
-  Entity *e = (Entity *)malloc(sizeof(Entity));
-  e->space.width = BULLET_SIZE;
-  e->space.height = BULLET_SIZE;
+  for (int i = 0; i < word_len; i += 3) {
+    Bullet *b = (Bullet *)malloc(sizeof(Entity));
+    Entity *e = (Entity *)malloc(sizeof(Entity));
+    e->space.width = BULLET_SIZE;
+    e->space.height = BULLET_SIZE;
 
-  e->space.posx = x + BULLET_SIZE / 2;
-  e->space.posy = y + BULLET_SIZE / 2;
+    e->space.posx = x + BULLET_SIZE / 2;
+    e->space.posy = y + BULLET_SIZE / 2;
 
-  e->rotation = atan2f(ty - y, tx - x);
-  e->velocity = p->velocity;
-  e->velocity.x += 15 * cos(e->rotation);
-  e->velocity.y += 5 * sin(e->rotation);
+    if (rot < 0) {
+      angle = (i - word_len * 0.5) * M_PI / 36.0;
 
-  AddBullet(game, e);
+    } else {
+      angle = (-i + word_len * 0.5) * M_PI / 36.0;
+    }
+    e->rotation = rot + angle;
+    e->velocity = p->velocity;
+    e->velocity.x += 10 * cos(e->rotation);
+    e->velocity.y += 2.5 * sin(e->rotation);
+
+    b->s = malloc(3 * sizeof(char));
+    b->s[0] = word[i];
+    b->s[1] = word[i + 1];
+    b->s[2] = word[i + 2];
+
+    b->e = e;
+    AddBullet(game, b);
+  }
 }
 
-void AddBullet(Game *game, Entity *bullet) {
+void AddBullet(Game *game, Bullet *bullet) {
   for (int i = 0; i < MAX_BULLETS; i++) {
     if (game->bullets[i] != NULL) {
       continue;
@@ -113,30 +136,34 @@ void AddBullet(Game *game, Entity *bullet) {
   }
 }
 
-void RemoveBullet(Game *game, Entity *b) {
+void RemoveBullet(Game *game, Bullet *b) {
   int id = b->id;
   if (id < 0 || id >= MAX_BULLETS) {
     return;
   }
   game->bullets[id] = NULL;
+  free(b->e);
   free(b);
 }
 
 void UpdateBullets(Game *game) {
   double width, height;
-  HgGetSize(&width, &height);
+  Bullet *bullet;
   Entity *p = &game->player;
   Entity *e;
 
+  HgGetSize(&width, &height);
   game->bulletsCount = 0;
   for (int i = 0; i < MAX_BULLETS; i++) {
-    e = game->bullets[i];
-    if (e == NULL) {
+    bullet = game->bullets[i];
+    if (bullet == NULL) {
       continue;
     }
+
+    e = bullet->e;
     game->bulletsCount++;
 
-    e->velocity.y -= 0.1;
+    e->velocity.y -= 0.05;
     e->space.posx += e->velocity.x;
     e->space.posy += e->velocity.y;
 
@@ -144,7 +171,7 @@ void UpdateBullets(Game *game) {
     double b = p->space.posy - e->space.posy;
     double distSq = (a * a) + (b * b);
     if (distSq > width * width && distSq > height * height) {
-      RemoveBullet(game, e);
+      RemoveBullet(game, bullet);
     }
   }
 }

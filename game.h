@@ -19,6 +19,8 @@
 #define MAX_BULLETS (100)
 #define BULLET_SIZE (16)
 
+#define MAX_ENEMIES (100)
+
 typedef enum GameState {
   TITLE,
   PLAY,
@@ -33,6 +35,12 @@ typedef struct {
 typedef struct {
   int frames;
 } ExitSceneMeta;
+
+typedef struct {
+  int id;
+  Entity *e;
+  char *s;
+} Bullet;
 
 typedef struct {
   /** @brief Debugを表示するか */
@@ -53,7 +61,10 @@ typedef struct {
   Entity player;
 
   int bulletsCount;
-  Entity *bullets[MAX_BULLETS];
+  Bullet *bullets[MAX_BULLETS];
+
+  int enemyCount;
+  Entity enemies[MAX_ENEMIES];
 
   ButtonList buttons[3];
 
@@ -156,7 +167,7 @@ Tile *getHitTile(Space2d *space, Map *map);
  * @param game
  * @param bullet
  */
-void AddBullet(Game *game, Entity *bullet);
+void AddBullet(Game *game, Bullet *bullet);
 
 /**
  * @brief 弾丸オブジェクトを削除し、メモリを解放する
@@ -164,7 +175,7 @@ void AddBullet(Game *game, Entity *bullet);
  * @param game
  * @param b
  */
-void RemoveBullet(Game *game, Entity *b);
+void RemoveBullet(Game *game, Bullet *b);
 
 /**
  * @brief すべての弾丸オブジェクトについて、処理を行う

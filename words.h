@@ -1,3 +1,5 @@
+#ifndef WORDS_H
+#define WORDS_H
 #include <stdio.h>
 
 #define WORDS_FILE_PATH "./assets/words.txt"
@@ -15,3 +17,5 @@ void LoadWords();
  * @param pn 文字列の長さへのポインタ
  */
 char *GetRandomWord();
+
+#endif

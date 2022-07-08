@@ -10,18 +10,18 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "words.h"
+
 extern Input input;
 
 // #define TEST
 #ifdef TEST
 int main(void) {
-  Space2d a = {10, 10, 10, 10};
-  Space2d b = {0, 0, 15, 15};
-  Space2d c = {25, 25, 10, 10};
+  LoadWords();
+  char *word;
+  word = GetRandomWord();
 
-  printf("A:B = %d\n", IsBoxHit(&a, &b));
-  printf("B:C = %d\n", IsBoxHit(&b, &c));
-  printf("C:A = %d\n", IsBoxHit(&c, &a));
+  printf("%s\n", word);
 }
 #else
 
@@ -113,6 +113,7 @@ int main() {
 void initAll(Game *game) {
   initInput(&input);
   initGame(game);
+  LoadWords();
   LoadAssets(game);
   initButtons(game, WINDOW_WIDTH, WINDOW_HEIGHT);
 }
@@ -335,7 +336,7 @@ void RenderPlayer(int layer, Game *game) {
   double w = space.width;
   double h = space.height;
 
-  HgWImageDrawRect(layer, x, y, w, h, ptex, 0, 0, img_w, img_h);
+  // HgWImageDrawRect(layer, x, y, w, h, ptex, 0, 0, img_w, img_h);
 
   HgWBox(layer, x, y, space.width, space.height);
 }
@@ -376,21 +377,25 @@ void RenderStatus(int layer, Game *game) {
 }
 
 void RenderBullets(int layer, Game *game) {
+  Bullet *b;
   Entity *e;
   Space2d space;
   double x, y;
   int tex = getTextureId(game->texMap, "./images/arrow.png");
 
+  HgWSetFontByName(layer, KaiseiFont, 24.0);
+  HgWSetColor(layer, HG_WHITE);
   for (int i = 0; i < MAX_BULLETS; i++) {
-    e = game->bullets[i];
-    if (e == NULL) {
+    b = game->bullets[i];
+    if (b == NULL) {
       continue;
     }
-
+    e = b->e;
     space = e->space;
     x = space.posx - game->cameraPos.x + WINDOW_WIDTH / 2;
     y = space.posy - game->cameraPos.y + WINDOW_HEIGHT / 2;
-    HgWImagePut(layer, x, y, tex, 0.2, e->rotation);
+    // HgWImagePut(layer, x, y, tex, 0.2, e->rotation);
+    HgWText(layer, x, y, "%s", b->s);
   }
 }
 
