@@ -24,6 +24,7 @@ int IsPointHit(Space2d *t, int px, int py) {
 Space2dHitResult CheckBoxHit(Space2d *a, Space2d *b) {
   Space2dHitResult res;
   if (a == NULL || b == NULL) {
+    res.isHit = false;
     return res;
   }
   int left = fmin(LEFT(a), LEFT(b));
