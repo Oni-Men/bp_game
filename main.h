@@ -7,18 +7,17 @@
 #include "entity.h"
 #include "game.h"
 #include "input.h"
-#include "map.h"
 #include "space.h"
 #include "status.h"
 #include "texture.h"
 #include "timeutil.h"
 
-#define WINDOW_TITLE "落ちる単語シューター"
+#define WINDOW_TITLE "プロテイン"
 #define WINDOW_WIDTH (1080)
 #define WINDOW_HEIGHT (720)
 #define FPS (60.0)
 
-#define KaiseiFont ("Kaisei Opti Regular")
+#define NormalFont ("凸版文久ゴシック")
 #define FuturaFont ("Futura Medium")
 
 #define PAUSE_TOGGLE_KEY (0x1B)
@@ -133,7 +132,21 @@ void RenderPlayer(int layer, Game *game);
  */
 void RenderPlayBackground(int layer, Game *game);
 
+/**
+ * @brief 弾丸を描画する
+ *
+ * @param layer
+ * @param game
+ */
 void RenderBullets(int layer, Game *game);
+
+/**
+ * @brief すべての敵を描画する
+ *
+ * @param layer
+ * @param game
+ */
+void RenderEnemies(int layer, Game *game);
 
 /**
  * @brief 文字列を、中央寄せで描画

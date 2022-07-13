@@ -32,6 +32,9 @@ struct L {
   L next;
 };
 
+/**
+ * @brief ボタン描画関数の関数ポインタ
+ */
 typedef void (*ButtonRender)(int id, Button *b);
 
 /**
@@ -41,8 +44,24 @@ typedef void (*ButtonRender)(int id, Button *b);
  */
 L NewButtonList();
 
+/**
+ * @brief リストにボタンを追加する
+ *
+ * @param list
+ * @param id
+ * @param box
+ * @param str
+ * @return L
+ */
 L AddButton(L list, int id, Space2d box, const char *str);
 
+/**
+ * @brief ボタンリスト内のすべてのボタンを、描画関数ポインタを用いて描画する
+ *
+ * @param layer
+ * @param list
+ * @param renderer
+ */
 void RenderAllButton(int layer, L list, ButtonRender renderer);
 
 Button *GetHoveredButton(L list, int mousex, int mousey);

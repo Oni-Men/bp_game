@@ -15,6 +15,8 @@ struct WordList {
 size_t len_word_list;
 char **word_list;
 
+extern int rand_counter;
+
 void LoadWords() {
   printf("section start: LoadWords\n");
   FILE *f;
@@ -64,10 +66,9 @@ void LoadWords() {
 }
 
 char *GetRandomWord() {
-  int r;
-  srand(time(NULL));
+  srand(time(NULL) + rand_counter++);
   rand();
-  r = ((double)rand() / RAND_MAX) * (len_word_list);
+  int r = ((double)rand() / RAND_MAX) * (len_word_list);
 
   return word_list[r];
 }

@@ -1,6 +1,6 @@
 TARGET  := run
 CC := hgcc
-CFLAGS := -W -Wall
+CFLAGS :=
 SRCS := $(wildcard *.c)
 OBJS := $(patsubst %.c,%.o,$(SRCS))
 
@@ -15,5 +15,5 @@ test: $(TARGET)
 
 .PHONY: clean
 clean:
-	rm ./$(TARGET)
-	rm ./*.o
+	-rm ./$(TARGET)
+	-rm ./*.o
